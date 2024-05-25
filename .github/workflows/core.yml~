@@ -21,12 +21,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: 'mywalkb/LSPosed_mod'
-          ref: '${{ github.ref }}'
           submodules: "recursive"
           fetch-depth: 0
-      - run: |
-          git tag --list v1.9.2 | grep -q -e . || git tag --create-reflog --no-edit v1.9.2 f8927757e8704d96611e1f3d75f702e3f0ce061f
 
       - name: Write key
         if: ${{ ( github.event_name != 'pull_request' && startsWith(github.ref, 'refs/heads/') ) || github.ref_type == 'tag' }}
@@ -43,7 +39,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: libxposed/api
-          ref: '54582730315ba4a3d7cfaf9baf9d23c419e07006'
           path: libxposed/api
 
       - name: Checkout libxposed/service
@@ -59,7 +54,9 @@ jobs:
           java-version: "21"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-home-cache-cleanup: true
 
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1.2
@@ -133,36 +130,3 @@ jobs:
         with:
           name: xposed_service-debug
           path: services/xposed-service/interface/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/*
-
-      - name: '[DEBUG] Dump environment info'
-        if: '${{ ! cancelled() }}'
-        run: |
-          uname -a && set && (
-            printf %s '{'
-            printf %s '"github":${{ toJson(github) }},'
-            printf %s '"env":${{ toJson(env) }},'
-            printf %s '"vars":${{ toJson(vars) }},'
-            printf %s '"job":${{ toJson(job) }},'
-            printf %s '"steps":${{ toJson(steps) }},'
-            printf %s '"runner":${{ toJson(runner) }},'
-            printf %s '"secrets":${{ toJson(secrets) }},'
-            printf %s '"strategy":${{ toJson(strategy) }},'
-            printf %s '"matrix":${{ toJson(matrix) }},'
-            printf %s '"needs":${{ toJson(needs) }},'
-            printf %s '"inputs":${{ toJson(inputs) }}'
-            printf %s '}'
-          ) | if (
-            : | sudo apt-get install -y jq
-          ); then
-            jq -rMS .
-          else
-            cat
-          fi
-      - name: '[DEBUG] Upload workspace caches'
-        if: '${{ ! cancelled() }}'
-        uses: 'actions/upload-artifact@v4'
-        with:
-          name: '${{ github.repository_owner_id }}-${{ github.repository_id }}-${{ github.sha }}'
-          path: '${{ runner.workspace }}'
-          compression-level: 9
-          include-hidden-files: true
